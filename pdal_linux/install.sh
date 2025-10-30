@@ -20,8 +20,8 @@ python3 las_to_copc.py IN2020_26550965_12.las
 
 # Multi File Conversion from S3 to S3
 wget -q https://raw.githubusercontent.com/jahoog/pdal_test/refs/heads/main/pdal_docker/run.py
-export S3_SOURCE_BUCKET=jah-br-samp-docs
-export S3_SOURCE_FOLDER=las/statewide/2020/SPW/ql2/
-export S3_TARGET_BUCKET=jah-br-samp-docs
-export S3_TARGET_FOLDER=copc/statewide/2020/SPW/ql2/
+export S3_SOURCE_BUCKET=my-bucket-name
+export S3_SOURCE_FOLDER=my/folder/
+export S3_TARGET_BUCKET=my-bucket-name
+export S3_TARGET_FOLDER=my/folder
 python3 run.py
