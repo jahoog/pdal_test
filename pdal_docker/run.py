@@ -2,7 +2,6 @@ import pdal
 import json
 import os
 import sys
-import subprocess
 import boto3
 from pathlib import Path
 
@@ -51,35 +50,20 @@ def convert_las_to_copc(input_file, output_file=None):
         ]
     }
 
-    # Write pipeline to temporary file
-    pipeline_file = input_path.parent / "temp_pipeline.json"
-
     try:
-        with open(pipeline_file, 'w') as f:
-            json.dump(pipeline, f, indent=2)
-
-        # Run PDAL pipeline
-        cmd = ['pdal', 'pipeline', str(pipeline_file)]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-
-        if result.returncode == 0:
-            print(f"✅ Successfully converted to {output_path}")
-            print(f"Output file size: {output_path.stat().st_size / (1024*1024):.2f} MB")
-            return True
-        else:
-            print(f"❌ Conversion failed:")
-            print(f"Error: {result.stderr}")
-            return False
-
+        json_pipeline = json.dumps(pipeline)
+        pipe = pdal.Pipeline(json_pipeline)
+        count = pipe.execute()
+        metadata = pipe.metadata
+        print(f"Processed {count} points. COPC output: {output_path}")
+        print(f"Output file size: {output_path.stat().st_size / (1024*1024):.2f} MB")
+        return True
     except Exception as e:
         print(f"❌ Error during conversion: {e}")
         return False
-
     finally:
         # Clean up temporary pipeline file
-        if pipeline_file.exists():
-            pipeline_file.unlink()
-
+        print("Done")
 
 print(pdal.__version__);
 
