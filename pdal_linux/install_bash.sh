@@ -8,10 +8,13 @@ source ~/.bashrc
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+
 # Create your env
 conda create -n prod -y
 conda activate prod
-conda install -c conda-forge pdal python-pdal gdal -y  # Add your packages
+conda install -c conda-forge pdal python-pdal gdal boto3 -y  # Add your packages
 
 #Single File Conversion
 wget -q https://giselevationingov.s3.amazonaws.com/las/statewide/2020/SPW/ql2/IN2020_26550965_12.las
@@ -25,3 +28,4 @@ export S3_SOURCE_FOLDER=my/folder/
 export S3_TARGET_BUCKET=my-bucket-name
 export S3_TARGET_FOLDER=my/folder
 python3 run.py
+ 
