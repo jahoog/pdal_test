@@ -1,0 +1,21 @@
+# PDAL Conversion to COPC
+
+This repo has samples for how to use python to convert PDAL (.las) files to COPC format. It uses the pdal-python libraries and has samples for Linux, Docker and AWS Lambda deployments.
+
+# Deployment Types
+
+## Linux
+
+The pdal_linux folder includes a install_bash.sh file that includes the installation procedures for installing the pdal libraries via conda.
+
+## Docker
+
+The pdal_docker folder includes a install.sh file that includes the installation procedures for building, testing and deploying the docker repo to AWS Fargate.
+
+## AWS Lambda
+
+the pdal_docker_lambda folder inclues a install.sh file that includes the installation procedures for building, testing and deploying the docker image to AWS lambda for invocation.
+
+## AWS Batch
+
+the pdal_docker_batch folder includes a install.sh file that includes the installation procedures for building, testing and deploying the docker image to AWS Lambda for invocation from S3 Batch Operations

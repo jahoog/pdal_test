@@ -9,6 +9,8 @@ s3_client = boto3.client("s3")
 S3_TARGET_FOLDER = os.environ['S3_TARGET_FOLDER']
 S3_TARGET_BUCKET = os.environ['S3_TARGET_BUCKET']
 TEMP_FILE_LOCATION = "/tmp"
+TRIM_LEADING_FOLDER = True
+json_template = {'invocationId': '<a big long string>', 'job': {'id': '<a GUID>'}, 'tasks': [{'taskId': '<a big long string>', 's3BucketArn': 'arn:aws:s3:::<bucket name>', 's3Key': '<s3 key>', 's3VersionId': 'null'}], 'invocationSchemaVersion': '1.0'}
 
 def convert_las_to_copc(input_file, output_file=None):
     """Convert LAS file to COPC format"""
@@ -58,8 +60,20 @@ def convert_las_to_copc(input_file, output_file=None):
         print("Done")
 
 def handler(event, context):
-    S3_SOURCE_BUCKET=event['S3_SOURCE_BUCKET']
-    S3_SOURCE_OBJECT=event['S3_SOURCE_OBJECT']
+    # Parse job parameters from Amazon S3 batch operations
+    invocation_id = event["invocationId"]
+    invocation_schema_version = event["invocationSchemaVersion"]
+
+    results = []
+    result_code = None
+    result_string = None
+
+    task = event["tasks"][0]
+    task_id = task["taskId"]
+    	    
+    # Our source S3 bucket is passed in via the event e.tasks[0].s3BucketArn and e.tasks[0].s3Key (assuming only one task)
+    S3_SOURCE_BUCKET=task['s3BucketArn'].split(":::")[-1]
+    S3_SOURCE_OBJECT=task['s3Key']
 
     success = True
     filename = os.path.basename(S3_SOURCE_OBJECT)
@@ -68,16 +82,33 @@ def handler(event, context):
     output_file = filename + ".copc"
     success = convert_las_to_copc(TEMP_FILE_LOCATION + "/" + input_file, TEMP_FILE_LOCATION + "/" + output_file)
 
-    response = s3_client.upload_file(TEMP_FILE_LOCATION + "/" + output_file, S3_TARGET_BUCKET, S3_TARGET_FOLDER + output_file)
+	# create a variable that has just the folder without the filename from S3_SOURCE_OBJECT
+    s3_source_folder = "/".join(S3_SOURCE_OBJECT.split("/")[:-1]) + "/"
+    s3_target_file = s3_source_folder + output_file
+    if TRIM_LEADING_FOLDER:
+        s3_target_file = "/".join(s3_target_file.split("/")[1:])
+
+    response = s3_client.upload_file(TEMP_FILE_LOCATION + "/" + output_file, S3_TARGET_BUCKET, S3_TARGET_FOLDER + s3_target_file)
+
+    result_code = "Succeeded"
+    result_string = (
+    	f"Successfully copied converted file "
+        f"{S3_TARGET_FOLDER}{s3_target_file} from object {S3_SOURCE_OBJECT}."
+    )
     os.remove(TEMP_FILE_LOCATION + "/" + output_file)
     os.remove(TEMP_FILE_LOCATION + "/" + input_file)
 
-
+    results.append(
+    {
+    	"taskId": task_id,
+        "resultCode": result_code,
+        "resultString": result_string,
+        }
+    )
+    
     return {
-            "PDAL VERSION": pdal.__version__,
-            "SYS VERSION": sys.version,
-            "S3 SOURCE BUCKET": S3_SOURCE_BUCKET,
-            "S3 SOURCE OBJECT": S3_SOURCE_OBJECT,
-            "CONVERSION": success,
-            "FILES": os.listdir("/tmp")
+        "invocationSchemaVersion": invocation_schema_version,
+        "treatMissingKeysAs": "PermanentFailure",
+        "invocationId": invocation_id,
+        "results": results,
     }
