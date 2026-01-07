@@ -79,7 +79,7 @@ def handler(event, context):
     filename = os.path.basename(S3_SOURCE_OBJECT)
     s3_client.download_file(S3_SOURCE_BUCKET, S3_SOURCE_OBJECT, TEMP_FILE_LOCATION + "/" + filename)
     input_file = filename
-    output_file = filename + ".copc"
+    output_file = Path(filename).with_suffix('.copc').name
     success = convert_las_to_copc(TEMP_FILE_LOCATION + "/" + input_file, TEMP_FILE_LOCATION + "/" + output_file)
 
 	# create a variable that has just the folder without the filename from S3_SOURCE_OBJECT
@@ -88,7 +88,9 @@ def handler(event, context):
     if TRIM_LEADING_FOLDER:
         s3_target_file = "/".join(s3_target_file.split("/")[1:])
 
-    response = s3_client.upload_file(TEMP_FILE_LOCATION + "/" + output_file, S3_TARGET_BUCKET, S3_TARGET_FOLDER + s3_target_file)
+    # Upload the file to the target bucket and folder
+    # NOTE: The ExtraArgs is only necessary if the target bucket is in a different account, but should not have an impact if it's the same account
+    response = s3_client.upload_file(TEMP_FILE_LOCATION + "/" + output_file, S3_TARGET_BUCKET, S3_TARGET_FOLDER + s3_target_file, ExtraArgs={'ACL':'bucket-owner-full-control'})
 
     result_code = "Succeeded"
     result_string = (
